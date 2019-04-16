@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 #include <string.h>
+#include <stdlib.h>
 #include <curl/curl.h>
+#include <sstream>
 #include "JsonRpcClient.h"
 
 using namespace std;
@@ -36,41 +38,66 @@ int JsonRpcClient::SendData(const char *url, const char *jsondata)
 {
 	CURL *curl = NULL;
 	CURLcode res;
-	struct curl_slist *header;
-	//curl_socket_t sockfd;
-	//long sockextr;
-	//size_t iolen;	
+	struct curl_slist *header = NULL;	
 
-	CURLcode p1;
-
+	int len = strlen(jsondata);
+	cout << len << endl;	
+	stringstream ss;
+	ss << len;
+	string str = ss.str();
+	str = "Content-Length: " + str;
+	//cout << str.c_str() << endl;
+	
 	curl = curl_easy_init();
 	if(curl != NULL)
 	{
-		//设置http发送的内容类型为JSON
-		header  = curl_slist_append(header, "Content_Type:json");
-		//构建HTTP报文头,请求消息头用于告诉服务器如何处理请求
-		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+	
+		header  = curl_slist_append(header, str.c_str());
+		if (header == NULL) {
+			curl_slist_free_all(header);
+  			return -1;
+		}
 
-		curl_easy_setopt(curl, CURLOPT_URL, url);//url
-		curl_easy_setopt(curl, CURLOPT_PORT, 6666);
+		res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header);
+		if(res != CURLE_OK)
+			return -1;
 
-		//设置为非0表示本次操作为POST
-		curl_easy_setopt(curl,CURLOPT_POST,1);
-		curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+		res = curl_easy_setopt(curl, CURLOPT_URL, url);
+		//Returns CURLE_OK on success or CURLE_OUT_OF_MEMORY if there was insufficient heap space. 
+		if(res != CURLE_OK)
+			return -1;
+
+		res = curl_easy_setopt(curl, CURLOPT_PORT, 6666);
+		if(res != CURLE_OK)
+			return -1;
+
+		//curl_easy_setopt(curl,CURLOPT_POST,1);
+		//Returns CURLE_OK if HTTP is supported, and CURLE_UNKNOWN_OPTION if not. 
+		
+		res = curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+		if(res != CURLE_OK)
+			return -1;
 		//设置要POST的JSON数据
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsondata);
+		res = curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsondata);
+		if(res != CURLE_OK)
+			return -1;
 
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, receive_data);//接收
-   		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(this->recvdata));
+		res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, receive_data);
+		if(res != CURLE_OK)
+			return -1;
+
+   		res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, &(this->recvdata));
+   		if(res != CURLE_OK)
+			return -1;
 
    		//curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_data);//发送
    		//curl_easy_setopt(curl, CURLOPT_READDATA, jsondata);
 
 		res = curl_easy_perform(curl);
-
 		if(res != CURLE_OK)
 		{
 				cout << "curl_easy_perform failed" << endl;
+				return -1;
 		}
 
 		curl_easy_cleanup(curl);	
@@ -85,21 +112,30 @@ int JsonRpcClient::SendData(const char *url, const char *jsondata)
 
 void JsonRpcClient::doRequest(const char *url, const char *jsondata) 
 {
-			JsonRpcClient temp;
+	JsonRpcClient temp;
 
-			temp.SendData(url, jsondata);
+	temp.SendData(url, jsondata);
 
-			cout << temp.recvdata << endl;
-			cout << "----------" << endl;
-			//JsonRpcResponse(temp.recvdata);
+	cout << temp.recvdata << endl;
+	cout << "----------" << endl;
+
+	/*JsonRpcResponse *p = new JsonRpcResponse();
+	int n = p->ParseMultiObj(temp.recvdata);
+	for(int i = 0; i < n; i++)
+	{
+		cout << p->GetMultiId(i) << endl;
+		cout << p->GetMultiResult(i) << endl;
+	}
+	delete p;*/
+
+	//JsonRpcResponse(temp.recvdata);
 			
-			JsonRpcResponse *p = new JsonRpcResponse(temp.recvdata);
-			cout << p->GetId() << endl;
-						cout << "----------" << endl;
+	/*JsonRpcResponse *p = new JsonRpcResponse(temp.recvdata);
+	cout << p->GetId() << endl;
+	cout << "----------" << endl;
 
-			cout << p->GetResult() << endl;
-						cout << "----------" << endl;
+	cout << p->GetResult() << endl;
+	cout << "----------" << endl;
 
-
-			delete p;
+	delete p;*/
 }

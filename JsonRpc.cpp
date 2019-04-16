@@ -22,6 +22,11 @@ JsonRpcRequest::JsonRpcRequest(const std::string &json)
 	}
 }
 
+JsonRpcRequest::JsonRpcRequest(const JsonRpcRequest &a):json_str(a.json_str)
+{
+
+}
+
 int JsonRpcRequest::Validate()
 {
 	if((json_str.isMember("jsonrpc") != true))
@@ -116,6 +121,11 @@ JsonRpcResponse::JsonRpcResponse(const std::string &json)
 	else cout << "json parse successfully" << endl;
 }
 
+JsonRpcResponse::JsonRpcResponse(const JsonRpcResponse &a):json_str(a.json_str)
+{
+ 	
+}
+
 int JsonRpcResponse::Validate()
 {
 	if ((json_str.isMember("result"))&&(json_str.isMember("error")))
@@ -126,69 +136,8 @@ int JsonRpcResponse::Validate()
 
 	if ( json_str.isMember("result") != true && json_str.isMember("error") != true )
 		return NO_RESULT_OR_ERROR;
-
-
 	
-/*以下是code不符合
-	if(json_str.isMember("error"))
-	{
-
-	if( !((json_str["error"]["code"].asInt() == -32700) 
-			|| (json_str["error"]["code"].asInt() == -32600) 
-			|| (json_str["error"]["code"].asInt() == -32601) 
-			|| (json_str["error"]["code"].asInt() == -32602) 
-			|| (json_str["error"]["code"].asInt() == -32603) 
-			|| ((json_str["error"]["code"].asInt() < -32000) && (json_str["error"]["code"].asInt()) > -32099)))
-		
-		return NO_THIS_CODE;
-//以下是message不符合
-    if(strcmp(json_str["error"]["message"].asString().c_str(),"Parse error") != 0 
-		&& strcmp(json_str["error"]["message"].asString().c_str(),"Invalid Request") != 0 
-		&& strcmp(json_str["error"]["message"].asString().c_str(),"Method not found") != 0 
-		&& strcmp(json_str["error"]["message"].asString().c_str(),"Invalid params") != 0 
-		&& strcmp(json_str["error"]["message"].asString().c_str(),"Internal error") != 0 
-		&& strcmp(json_str["error"]["message"].asString().c_str(),"Server error") != 0 ) 
-
-		return NO_THIS_MESSAGE;
-//以下是code,message不匹配
-	if(json_str["error"]["code"].asInt() == -32700) 
-	{
-		strcmp(json_str["error"]["message"].asString().c_str(),"Parse error") != 0;
-		return MISMATCH_CODE_MESSAGE;
-	}
-
-	if(json_str["error"]["code"].asInt() == -32600) 
-	{
-		strcmp(json_str["error"]["message"].asString().c_str(),"Invalid Request") != 0;
-		return MISMATCH_CODE_MESSAGE;
-	}
-
-	if(json_str["error"]["code"].asInt() == -32601)
-	{
-		strcmp(json_str["error"]["message"].asString().c_str(),"Method not found") != 0;
-		return MISMATCH_CODE_MESSAGE;
-	}
-
-	if(json_str["error"]["code"].asInt() == -32602)
-	{
-		strcmp(json_str["error"]["message"].asString().c_str(),"Invalid params") != 0;
-		return MISMATCH_CODE_MESSAGE;
-	}
-
-	if(json_str["error"]["code"].asInt() == -32603)
-	{
-		strcmp(json_str["error"]["message"].asString().c_str(),"Internal error") != 0;
-		return MISMATCH_CODE_MESSAGE;
-	}
-
-	if(json_str["error"]["code"].asInt() > -32099 && json_str["error"]["code"].asInt() < -32000)
-	{
-			strcmp(json_str["error"]["message"].asString().c_str(),"Server error") != 0;
-			return MISMATCH_CODE_MESSAGE;
-	}
-
-	}*/
-	
+	return 0;	
 }
 
 std::string JsonRpcResponse::ToString()
@@ -217,22 +166,6 @@ Json::Value& JsonRpcResponse::GetResult()
 {
 	return (json_str["result"]) ;
 }
-
-//void JsonRpcResponse::SetResult(const std::string &Result)
-//{
-//	Json::Value result;
-//	Json::Reader reader;
-
-//	reader.parse(Result,result);
-//	json_str["result"] = result;
-//}
-
-//std::string JsonRpcResponse::GetResult()
-//{
-//	Json::FastWriter writer;
-
-//	return writer.write(json_str["result"]);
-//}
 
 void JsonRpcResponse::SetError(const std::string &Error)
 {
@@ -274,3 +207,123 @@ int JsonRpcResponse::GetId()
 	//	json_str[*iter] = value[*iter];
 	//}
 }*/
+
+MJsonRpcRequest::MJsonRpcRequest()
+{
+
+}
+
+MJsonRpcRequest::MJsonRpcRequest(const std::string &json)
+{
+	Json::Reader reader;
+	if(!reader.parse(json,jsondata))
+	{
+		cerr << "json parse failed" << endl;
+		return;
+	}
+	n = jsondata.size();
+
+	for(int i = 0;i < n;i ++)
+	{	
+		Json::FastWriter writer;
+		JsonRpcRequest A(writer.write(jsondata[i]));
+		V.push_back(A);
+	}
+
+	if(jsondata.type() == Json::arrayValue)
+		flag = 1;
+	else
+		flag = 0;
+}
+
+void MJsonRpcRequest::InsertJsonObj(JsonRpcRequest &obj)
+{
+	V.push_back(obj);
+}
+
+std::string MJsonRpcRequest::ToString()
+{
+	std::string r("[");
+	for (auto i : V)//将目标对象中的所有子对象进行遍历
+	{	
+		r += i.ToString()+",";
+	}
+
+	r.pop_back();
+	r += "]";
+	return r;
+}
+
+JsonRpcRequest & MJsonRpcRequest::operator[](int n)
+{
+ 	return V[n];
+}
+
+int MJsonRpcRequest::GetSize()
+{
+	return n;
+}
+
+bool MJsonRpcRequest::GetFlag()
+{
+	return flag;
+}
+
+MJsonRpcResponse::MJsonRpcResponse()
+{
+
+}
+
+MJsonRpcResponse::MJsonRpcResponse(const std::string &json)
+{
+	Json::Reader reader;
+	if(!reader.parse(json,jsondata))
+	{
+		cerr << "json parse failed" << endl;
+		return;
+	}
+	n = jsondata.size();
+
+	for(int i = 0;i < n; i++)
+	{
+		Json::FastWriter writer;
+		JsonRpcResponse A(writer.write(jsondata[i]));
+		V.push_back(A);
+	}
+
+	if(jsondata.type() == Json::arrayValue)
+		flag = 1;
+	else
+		flag = 0;
+}
+
+void MJsonRpcResponse::InsertJsonObj(JsonRpcResponse &obj)
+{
+	V.push_back(obj);
+}
+
+std::string MJsonRpcResponse::ToString()
+{
+	std::string r("[");
+	for (auto i : V)//将目标对象中的所有子对象进行遍历
+		r += i.ToString()+",";
+
+	r.pop_back();
+	r += "]";
+	return r;
+}
+
+JsonRpcResponse & MJsonRpcResponse::operator[](int n)
+{
+ 	return V[n];
+}
+
+int MJsonRpcResponse::GetSize()
+{
+	return n;
+}
+
+bool MJsonRpcResponse::GetFlag()
+{
+	return flag;
+}
