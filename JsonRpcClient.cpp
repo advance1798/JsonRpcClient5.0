@@ -8,6 +8,8 @@
 
 using namespace std;
 
+void OutputInfo(JsonRpcResponse &response);
+
 JsonRpcClient::JsonRpcClient()
 {
 	recvdata = "";
@@ -110,8 +112,6 @@ int JsonRpcClient::SendData(const char *url, const char *jsondata)
 }
 
 
-
-
 void JsonRpcClient::doRequest(const char *url, const char *jsondata) 
 {
 	JsonRpcClient temp;
@@ -121,81 +121,55 @@ void JsonRpcClient::doRequest(const char *url, const char *jsondata)
 	cout << temp.recvdata << endl;
 	cout << "----------" << endl;
 
-	JsonRpcResponse response(temp.recvdata);
+	//MJsonRpcResponse multiresponses(temp.recvdata);
 	
 	//在这之前得判断一下是否收到的是空数据，或者这一情况归结为解析失败里。
-	if(response.IsMulti())
-	{
 		MJsonRpcResponse multiResponses(temp.recvdata);
 
 		for(int i = 0; i < multiResponses.GetSize(); ++i)
 		{
-			if(multiResponses[i].Validate() == GET_RESULT)
-				cout << "id:" << multiResponses[i].GetId() << multiResponses[i].GetResult() << endl;
-
-			else if(multiResponses[i].Validate() == GET_ERROR)
-				cout << "id:" << multiResponses[i].GetId() << multiResponses[i].GetError() << endl;
-
-			else if(multiResponses[i].Validate() == PARSE_FAILED)
-				cout << "id:" << multiResponses[i].GetId() << "parse failed" << endl;
-
-			else if(multiResponses[i].Validate() == INVALID_INCLUDE)
-				cout << "id:" << multiResponses[i].GetId() << "invalid include" << endl;
-
-			else if(multiResponses[i].Validate() == NO_JSONRPC)
-				cout << "id:" << multiResponses[i].GetId() << "no jsonrpc" << endl;
-
-			else if(multiResponses[i].Validate() == NO_RESULT_OR_ERROR)
-				cout << "id:" << multiResponses[i].GetId() << "no result or error" << endl;
-
-			else if(multiResponses[i].Validate() == INVALID_ERROR)
-				cout << "id:" << multiResponses[i].GetId() << "invalid error" << endl;
+			OutputInfo(multiResponses[i]);
 		}
 
-	}
-	//单条
-	else
-	{	
-		if(response.Validate() == GET_RESULT)
-			cout << response.GetResult() << endl;
+}
 
-		else if(response.Validate() == GET_ERROR)
-			cout << response.GetError() << endl;
+void OutputInfo(JsonRpcResponse &response)
+{
+	switch(response.Validate())
+			{
+				case PARSE_FAILED:
+				cout << "id:" << response.GetId() << "parse failed" << endl;
+				break;
 
-		else if(response.Validate() == PARSE_FAILED)
-			cout << "parse failed" << endl;
+				case GET_ERROR:
+				cout << "id:" << response.GetId() << response.GetError() << endl;
+				break;
 
-		else if (response.Validate() == INVALID_INCLUDE)
-			cout << "invalid include" << endl;
+				case GET_RESULT:
+				cout << "id:" << response.GetId() << response.GetResult() << endl;
+				break;
 
-		else if(response.Validate() == NO_JSONRPC)
-			cout << "no jsonrpc" << endl;
+				case INVALID_INCLUDE:
+				cout << "id:" << response.GetId() << "invalid include" << endl;
+				break;
 
-		else if(response.Validate() == NO_RESULT_OR_ERROR)
-			cout << "no result or error" << endl;
+				case NO_JSONRPC:
+				cout << "id:" << response.GetId() << "no jsonrpc" << endl;
+				break;
 
-		else if(response.Validate() == INVALID_ERROR)
-			cout << "invalid error" << endl;
-	}
+				case NO_RESULT_OR_ERROR:
+				cout << "id:" << response.GetId() << "no result or error" << endl;
+				break;
 
+				case INVALID_ERROR:
+				cout << "id:" << response.GetId() << "invalid error" << endl;
+				break;
 
-
-	/*int n = p->ParseMultiObj(temp.recvdata);
-	for(int i = 0; i < n; i++)
-	{
-		cout << p->GetMultiId(i) << endl;
-		cout << p->GetMultiResult(i) << endl;
-	}
-	delete p;
-*/
-	//JsonRpcResponse(temp.recvdata);
-			
-	/*JsonRpcResponse *p = new JsonRpcResponse(temp.recvdata);
-	cout << p->GetId() << endl;
-	cout << "----------" << endl;
-
-	cout << p->GetResult() << endl;
-	cout << "----------" << endl;
-
-	delete p;*/
+				case 0 :
+				cout << "validating finished, but no result returned" << endl;
+				break;
+				
+				default:
+				break;
+			}
 }

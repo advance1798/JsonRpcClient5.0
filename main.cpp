@@ -11,8 +11,8 @@ using namespace std;
 
 int main()
 {
-	// MJsonRpcRequest M;
-	JsonRpcRequest A,B;
+     MJsonRpcRequest M;
+	JsonRpcRequest A,B,C;
 	/*const char *message = "{\"message\": \"hello, world! lt was dreadfully cold, \
 it was snowing fast, and almost dark； the evening----the last evening of the old \
 year was drawing in. But, cold and dark as it was, a poor little girl, with bare head and feet, \
@@ -25,17 +25,17 @@ the other had been snatched up by a little boy, who ran off with it thinking it 
 
     A.SetMethod("Print_Sth");
     A.SetParams("{\"one\":1, \"two\":2}");
-    A.SetId(1);
+   // A.SetId(1);
 
-   // M.InsertJsonObj(A);
+    M.InsertJsonObj(A);
     
     
-   /* B.SetMethod("Print_Sth");
+    B.SetMethod("Print_Sth");
     B.SetParams("{\"three\":3, \"four\":4}");
-    B.SetId(2);
-    M.InsertJsonObj(B);*/
-/*
-    C.SetMethod("Print_Sth");
+    //B.SetId(2);
+    M.InsertJsonObj(B);
+
+   /* C.SetMethod("Print_Sth");
     C.SetParams("{\"five\":5, \"six\":6}");
     C.SetId(003);
     M.InsertJsonObj(C);*/
@@ -43,9 +43,9 @@ the other had been snatched up by a little boy, who ran off with it thinking it 
 	//strcpy(jsondata, A.ToString().c_str());
 
 	JsonRpcClient one;
-    cout << A.ToString().c_str() << endl;
+    cout << M.ToString().c_str() << endl;
 	
-	one.doRequest("127.0.0.1",A.ToString().c_str());
+	one.doRequest("127.0.0.1",M.ToString().c_str());
 	//one.SendData(jsondata,"http://172.18.6.62/demo");
 	return 0;
 }
